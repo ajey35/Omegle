@@ -11,8 +11,9 @@ class RoomManager {
         return roomId;
     }
     joinRoom(socketId, roomId) {
-        if (!this.rooms[roomId])
+        if (!this.rooms[roomId]) {
             this.rooms[roomId] = [];
+        }
         if (this.rooms[roomId].length < 2) {
             this.rooms[roomId].push(socketId);
             return true;
@@ -21,9 +22,10 @@ class RoomManager {
     }
     leaveRoom(socketId) {
         for (const roomId in this.rooms) {
-            this.rooms[roomId] = this.rooms[roomId].filter(id => id !== socketId);
-            if (this.rooms[roomId].length === 0)
+            this.rooms[roomId] = this.rooms[roomId].filter((id) => id !== socketId);
+            if (this.rooms[roomId].length === 0) {
                 delete this.rooms[roomId]; // Cleanup empty rooms
+            }
         }
     }
 }
