@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import VideoPlayer from "../components/Video-player"; // Importing the reusable component
-import * as React from "react";
 
 const socket = io("https://heyarchie.duckdns.org/socket.io"); // Backend URL
 
 const VideoCall = () => {
   const [role, setRole] = useState<"sender" | "receiver" | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null!);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null!);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
 
