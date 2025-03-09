@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
 import VideoPlayer from "../components/Video-player"; // Importing the reusable component
 
-const socket = io("https://heyarchie.duckdns.org/socket.io"); // Backend URL
+const ws = new WebSocket("ws://localhost:8080"); // WebSocket server URL
 
 const VideoCall = () => {
   const [role, setRole] = useState<"sender" | "receiver" | null>(null);
@@ -21,7 +20,7 @@ const VideoCall = () => {
 
     peerConnection.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit("iceCandidate", event.candidate);
+        ws.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
       }
     };
 
@@ -31,31 +30,33 @@ const VideoCall = () => {
       }
     };
 
-    socket.on("createOffer", async (data) => {
-      if (peerConnection.current) {
-        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        const answer = await peerConnection.current.createAnswer();
-        await peerConnection.current.setLocalDescription(answer);
-        socket.emit("createAnswer", { sdp: answer });
-      }
-    });
+    ws.onmessage = async (event) => {
+      const data = JSON.parse(event.data);
 
-    socket.on("createAnswer", async (data) => {
-      if (peerConnection.current) {
-        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      if (data.type === "createOffer") {
+        if (peerConnection.current) {
+          await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
+          const answer = await peerConnection.current.createAnswer();
+          await peerConnection.current.setLocalDescription(answer);
+          ws.send(JSON.stringify({ type: "createAnswer", sdp: answer }));
+        }
       }
-    });
 
-    socket.on("iceCandidate", async (data) => {
-      if (peerConnection.current) {
-        await peerConnection.current.addIceCandidate(new RTCIceCandidate(data));
+      if (data.type === "createAnswer") {
+        if (peerConnection.current) {
+          await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        }
       }
-    });
+
+      if (data.type === "iceCandidate") {
+        if (peerConnection.current) {
+          await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+      }
+    };
 
     return () => {
-      socket.off("createOffer");
-      socket.off("createAnswer");
-      socket.off("iceCandidate");
+      ws.onmessage = null; // Cleanup event listener
     };
   }, [role]);
 
@@ -72,7 +73,7 @@ const VideoCall = () => {
       const offer = await peerConnection.current?.createOffer();
       if (offer && peerConnection.current) {
         await peerConnection.current.setLocalDescription(offer);
-        socket.emit("createOffer", { sdp: offer });
+        ws.send(JSON.stringify({ type: "createOffer", sdp: offer }));
       }
     }
   };
@@ -102,7 +103,7 @@ const VideoCall = () => {
           <button
             onClick={() => {
               setRole("sender");
-              socket.emit("set-role", { role: "sender" });
+              ws.send(JSON.stringify({ type: "set-role", role: "sender" }));
             }}
             className="bg-blue-500 px-6 py-3 rounded-lg hover:bg-blue-600 transition text-white text-lg"
           >
@@ -111,7 +112,7 @@ const VideoCall = () => {
           <button
             onClick={() => {
               setRole("receiver");
-              socket.emit("set-role", { role: "receiver" });
+              ws.send(JSON.stringify({ type: "set-role", role: "receiver" }));
             }}
             className="bg-green-500 px-6 py-3 rounded-lg hover:bg-green-600 transition text-white text-lg"
           >
