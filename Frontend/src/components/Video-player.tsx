@@ -5,6 +5,7 @@ interface VideoPlayerProps {
   isLocal?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoRef, isLocal }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 

@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 import VideoPlayer from "../components/Video-player"; // Importing the reusable component
 import * as React from "react";
 
-const socket = io("http://localhost:8080"); // Backend URL
+const socket = io("https://heyarchie.duckdns.org/socket.io"); // Backend URL
 
 const VideoCall = () => {
   const [role, setRole] = useState<"sender" | "receiver" | null>(null);
